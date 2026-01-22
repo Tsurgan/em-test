@@ -22,11 +22,11 @@ class TaskController extends Controller
         ]);
     
         if ($validator->fails()) {
-            return ['error'=>'Данные введены некорректно.'];
+            return response(['error'=>'Данные введены некорректно.'], 422);
         } else {
             $model = new Task;
             $task = $model->create($request->all());
-            return response($task,201);
+            return response($task, 201);
         }
     }
 
@@ -37,7 +37,7 @@ class TaskController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ['error'=>'Задачи с таким ID нет в базе данных.'];
+            return response(['error'=>'Задачи с таким ID нет в базе данных.'], 400);
         } else {
              return Task::find($id);
         }
@@ -51,7 +51,7 @@ class TaskController extends Controller
         ]);
 
         if ($idValidator->fails()) {
-            return ['error'=>'Задачи с таким ID нет в базе данных.'];
+            return response(['error'=>'Задачи с таким ID нет в базе данных.'], 400);
         } else {
             $task = Task::find($id);
             $dataValidator = Validator::make($request->all(), [
@@ -60,11 +60,11 @@ class TaskController extends Controller
                 'status_id' => 'integer|exists:statuses,id',
             ]);
             if ($dataValidator->fails()) {
-                return ['error'=>'Данные введены некорректно.'];
+                return response(['error'=>'Данные введены некорректно.'], 422);
 
             } else {
-                $updatedTask = $task->update($request->all());
-                return response($updatedTask,200);
+                $updatedTask = tap($task)->update($request->all());
+                return response($updatedTask, 200);
             }
         }
 
@@ -72,7 +72,14 @@ class TaskController extends Controller
 
     public function destroy($id)
     {
-        Task::destroy($id);
-        return response(null, 204);
+        $validator = Validator::make(['id' => $id], [
+            'id' => 'required|integer|exists:tasks,id',
+        ]);
+        if ($validator->fails()) {
+            return response(['error'=>'Задачи с таким ID нет в базе данных.'], 400);
+        } else {
+            Task::destroy($id);
+            return response(null, 204);
+        }
     }
 }
